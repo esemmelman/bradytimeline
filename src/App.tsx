@@ -18,7 +18,7 @@ const keyFor = (item: string, date: string) => `${item}::${date}`
 
 function dateFromKey(dateKey: string) {
   const [month, day] = dateKey.split('-').map(Number)
-  return new Date(month === 1 ? 2027 : 2026, month - 1, day)
+  return new Date(2026, month - 1, day)
 }
 
 function isEarlierThanCurrentWeek(dateKey: string) {
@@ -33,7 +33,7 @@ function isEarlierThanCurrentWeek(dateKey: string) {
 
 function daysFromColumnUntilEvent(dateKey: string) {
   const columnDate = dateFromKey(dateKey)
-  const eventDate = new Date(2027, 0, 27)
+  const eventDate = new Date(2026, 11, 12)
   return Math.max(0, Math.round((eventDate.getTime() - columnDate.getTime()) / 86_400_000))
 }
 
@@ -55,9 +55,9 @@ export default function App() {
 
   async function loadSheet() {
     const [itemsResult, datesResult, cellsResult] = await Promise.all([
-      supabase.from('mitzvah_status_items_v1').select('*').order('sort_order'),
-      supabase.from('mitzvah_status_dates_v1').select('*').order('sort_order'),
-      supabase.from('mitzvah_status_cells_v1').select('item_key,date_key,status'),
+      supabase.from('brady_status_items_v1').select('*').order('sort_order'),
+      supabase.from('brady_status_dates_v1').select('*').order('sort_order'),
+      supabase.from('brady_status_cells_v1').select('item_key,date_key,status'),
     ])
     const firstError = itemsResult.error || datesResult.error || cellsResult.error
     if (firstError) throw firstError
@@ -79,8 +79,8 @@ export default function App() {
       }
     })()
 
-    const channel = supabase.channel('mitzvah-status-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'mitzvah_status_cells_v1' }, () => void loadSheet())
+    const channel = supabase.channel('brady-status-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'brady_status_cells_v1' }, () => void loadSheet())
       .subscribe()
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setEditor(Boolean(session)))
     return () => { void supabase.removeChannel(channel); authListener.subscription.unsubscribe() }
@@ -134,8 +134,8 @@ export default function App() {
     })
     setSaving(mapKey)
     const result = selected
-      ? await supabase.from('mitzvah_status_cells_v1').upsert({ item_key: itemKey, date_key: dateKey, status: selected }, { onConflict: 'item_key,date_key' })
-      : await supabase.from('mitzvah_status_cells_v1').delete().eq('item_key', itemKey).eq('date_key', dateKey)
+      ? await supabase.from('brady_status_cells_v1').upsert({ item_key: itemKey, date_key: dateKey, status: selected }, { onConflict: 'item_key,date_key' })
+      : await supabase.from('brady_status_cells_v1').delete().eq('item_key', itemKey).eq('date_key', dateKey)
     setSaving(null)
     if (result.error) {
       setCells((current) => {
@@ -161,7 +161,7 @@ export default function App() {
       <section className="sheet-section">
         <div className="sheet-heading">
           <div className="sheet-title">
-            <h2>Progress sheet</h2>
+            <h2>Brady’s progress sheet</h2>
           </div>
           <div className="sheet-actions">
             {!editor && <div className="view-badge"><Eye size={15} /> View only</div>}
@@ -203,7 +203,7 @@ export default function App() {
                   {dates.map((date, index) => <th className={`countdown-heading ${isEarlierThanCurrentWeek(date.date_key) ? 'past-week' : ''}`} key={date.date_key}>{dates.length - index}</th>)}
                 </tr>
                 <tr className="date-row">
-                  {dates.map((date) => <th className={`date-heading ${isEarlierThanCurrentWeek(date.date_key) ? 'past-week' : ''}`} data-date-key={date.date_key} key={date.date_key} title={`${daysFromColumnUntilEvent(date.date_key)} days from ${date.label} until 1/27`}>{date.label}</th>)}
+                  {dates.map((date) => <th className={`date-heading ${isEarlierThanCurrentWeek(date.date_key) ? 'past-week' : ''}`} data-date-key={date.date_key} key={date.date_key} title={`${daysFromColumnUntilEvent(date.date_key)} days from ${date.label} until 12/12/2026`}>{date.label}</th>)}
                 </tr>
               </thead>
               <tbody>

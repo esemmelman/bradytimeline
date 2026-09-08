@@ -1,16 +1,20 @@
-# Mitzvah Status
+# Brady Timeline
 
-A public, live progress sheet backed by the `bnaimitzvah` Supabase project. Visitors can view every status; the designated owner can unlock editing with their Supabase account password used as a passcode.
+Brady's public progress sheet, based on https://github.com/esemmelman/bmtimelinear.
+
+Live site: https://esemmelman.github.io/bradytimeline/
+
+The original layout and learning rows are preserved. Weekly dates run from August 24 through December 7, 2026, with a final December 12 column. All progress starts blank.
 
 ## Run locally
 
-```bash
-npm install
-npm run dev
-```
+    npm ci
+    npm run dev
 
-The checked-in defaults point to the `bnaimitzvah` project using its safe, public publishable key. Set `VITE_EDITOR_EMAIL` when deploying if the editor account changes. Never place a service-role key in a `VITE_` variable.
+Run npm run build for the production build. GitHub Actions deploys main to GitHub Pages.
 
-## Editing
+## Saved progress and editing
 
-Select **Editor access**, enter the password for the configured editor account, choose red/yellow/green (or clear), then select cells. Row-level security prevents all other accounts from writing even if they inspect the browser requests.
+Uses the existing bnaimitzvah Supabase project with separate brady_status_items_v1, brady_status_dates_v1, and brady_status_cells_v1 tables. No original progress is copied. The database setup is recorded in database/setup.sql and the remote create_brady_timeline migration; do not rerun setup on an existing installation.
+
+Viewing is public. Editor access uses the existing designated owner's Supabase password. Row-level security restricts progress changes to that owner. The browser contains only the public publishable key.
