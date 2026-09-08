@@ -4,7 +4,9 @@ Brady's public progress sheet, based on https://github.com/esemmelman/bmtimeline
 
 Live site: https://esemmelman.github.io/bradytimeline/
 
-The original layout and learning rows are preserved. Weekly dates run from August 24 through December 7, 2026, with a final December 12 column. All progress starts blank.
+The original layout is preserved. Torah and Script rows cover 8–23; Haftarah rows cover 40–42. Weekly dates run from August 24 through December 7, 2026, excluding August 31, with a final December 12 column. All progress starts blank.
+
+After the original database setup, database/update-brady-readings.sql records the requested date and reading changes.
 
 ## Run locally
 

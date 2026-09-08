@@ -88,7 +88,7 @@ export default function App() {
 
   useEffect(() => {
     if (loading || !dates.length) return
-    const openingDateKey = '08-31'
+    const openingDateKey = '09-07'
     const positionAtOpeningDate = () => {
       const frame = tableFrameRef.current
       const firstHeading = frame?.querySelector<HTMLElement>('.date-heading')
