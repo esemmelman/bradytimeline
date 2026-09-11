@@ -8,7 +8,45 @@
     <title>Brady Timeline</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <section style="max-width:600px;margin:48px auto;padding:24px;font-family:Arial,sans-serif;color:#1d2926">
+        <h1 style="font-size:28px">Brady’s progress sheet</h1>
+        <p id="startup-message" role="status">Loading the timeline…</p>
+        <a id="reload-timeline" href="?reload=1" style="color:#31775c">Reload timeline</a>
+        <noscript><p>Please enable JavaScript to view the timeline.</p></noscript>
+      </section>
+    </div>
+    <script>
+      // A cached HTML page may reference a script removed by a newer deployment.
+      // Retry with a fresh document once, then keep a usable recovery message.
+      (function () {
+        var root = document.getElementById('root');
+        var fallback = root.firstElementChild.cloneNode(true);
+        function freshUrl() {
+          var url = new URL(window.location.href);
+          url.searchParams.set('reload', String(Date.now()));
+          return url.href;
+        }
+        function wireReload() {
+          var link = document.getElementById('reload-timeline');
+          if (link) link.href = freshUrl();
+        }
+        wireReload();
+        window.addEventListener('error', function (event) {
+          var scriptFailed = event.target && event.target.tagName === 'SCRIPT';
+          if (scriptFailed && !new URL(window.location.href).searchParams.has('reload')) {
+            window.location.replace(freshUrl());
+            return;
+          }
+          window.setTimeout(function () {
+            if (!root.hasChildNodes()) root.appendChild(fallback.cloneNode(true));
+            var message = document.getElementById('startup-message');
+            if (message) message.textContent = 'The timeline could not start. Please reload to get the latest version.';
+            wireReload();
+          }, 0);
+        }, true);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
