@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { ArrowLeft, CalendarDays, LoaderCircle, RotateCcw, Trash2 } from 'lucide-react'
 import { supabase } from './supabase'
+import NoteEditor from './NoteEditor'
 
 export default function ItemNotes({ item, onClose }: {
   item: { item_key: string; label: string }
   onClose: () => void
 }) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
   const latestBody = useRef('')
   const savedBody = useRef('')
   const pendingSave = useRef<Promise<boolean> | null>(null)
@@ -101,14 +103,19 @@ export default function ItemNotes({ item, onClose }: {
   function insertDate() {
     const date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
     const content = latestBody.current.trimEnd()
-    const next = (content ? content + '\n\n\n' : '') + date + '\n'
-    changeBody(next)
-    requestAnimationFrame(() => {
-      const field = textareaRef.current
-      field?.focus()
-      field?.setSelectionRange(next.length, next.length)
-      if (field) field.scrollTop = field.scrollHeight
-    })
+    const next = (content ? content + '\n\n\n' : '') + `**${date}**` + '\n'
+    flushSync(() => changeBody(next))
+    const field = editorRef.current
+    field?.focus()
+    if (field) {
+      const range = document.createRange()
+      range.setStart(field.lastChild ?? field, 0)
+      range.collapse(true)
+      const selection = window.getSelection()
+      selection?.removeAllRanges()
+      selection?.addRange(range)
+      field.scrollTop = field.scrollHeight
+    }
   }
 
   return <main className="notes-page">
@@ -122,8 +129,8 @@ export default function ItemNotes({ item, onClose }: {
           <button className="button button-light" onClick={insertDate} disabled={closing || loadFailed}><CalendarDays size={16} /> Insert date</button>
           <button className="button button-light" onClick={() => changeBody('')} disabled={closing || loadFailed || !body}><Trash2 size={16} /> Clear</button>
         </div>
-        <label htmlFor="item-note">Notes</label>
-        <textarea id="item-note" ref={textareaRef} autoFocus value={body} onChange={(event) => changeBody(event.target.value)} disabled={closing || loadFailed} placeholder="Add practice notes for this prayer or reading…" />
+        <label id="item-note-label">Notes</label>
+        <NoteEditor value={body} editorRef={editorRef} onChange={changeBody} disabled={closing || loadFailed} />
         <div className="notes-actions">
           {error && !loadFailed && <button className="button button-light" onClick={() => void save()} disabled={saving || closing}><RotateCcw size={16} /> Retry saving</button>}
           <span role="status">{loadFailed ? '' : error ? 'Not saved' : saving ? 'Saving…' : dirty ? 'Waiting to save…' : 'All changes saved automatically'}</span>

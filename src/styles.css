@@ -61,7 +61,8 @@ footer { background:#fffdf9; text-align:center; padding:22px; color:#9a9d98; fon
 .notes-card h1 { font-size:clamp(28px,5vw,44px); margin-bottom:24px; }
 .notes-toolbar,.notes-actions { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:18px 0; }
 .notes-card label { display:block; font-size:14px; font-weight:700; margin-bottom:8px; }
-.notes-card textarea { font:inherit; line-height:1.65; width:100%; min-height:45vh; padding:16px; border:1px solid #cfc9be; border-radius:12px; resize:vertical; background:white; color:var(--ink); }
-.notes-card textarea:focus-visible,.item-notes-link:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
+.note-editor { font:inherit; line-height:1.65; width:100%; min-height:45vh; padding:16px; border:1px solid #cfc9be; border-radius:12px; background:white; color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; }
+.note-editor strong { font-weight:700; }
+.note-editor:focus-visible,.item-notes-link:focus-visible { outline:2px solid var(--green); outline-offset:3px; }
 .notes-actions span { font-size:13px; color:#59635d; }
 .notes-card .button:disabled { opacity:.5; cursor:default; }
