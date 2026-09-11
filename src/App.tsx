@@ -88,8 +88,6 @@ export default function App() {
   useEffect(() => {
     void (async () => {
       try {
-        const { data } = await supabase.auth.getSession()
-        setEditor(data.session?.user.email === editorEmail)
         await loadSheet()
       } catch {
         setError('The status sheet could not be loaded. Please refresh and try again.')
@@ -102,8 +100,11 @@ export default function App() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'brady_status_cells_v1' }, () => void loadSheet())
       .subscribe()
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setEditor(session?.user.email === editorEmail)
-      if (session?.user.email !== editorEmail) setNoteItem(null)
+      // A restored session or another tab signing in must not enable editing.
+      if (session?.user.email !== editorEmail) {
+        setEditor(false)
+        setNoteItem(null)
+      }
     })
     return () => { void supabase.removeChannel(channel); authListener.subscription.unsubscribe() }
   }, [])
@@ -134,12 +135,13 @@ export default function App() {
     if (!passcode) return
     setSigningIn(true)
     setLoginError('')
-    const { error: authError } = await supabase.auth.signInWithPassword({ email: editorEmail, password: passcode })
+    const { data, error: authError } = await supabase.auth.signInWithPassword({ email: editorEmail, password: passcode })
     setSigningIn(false)
-    if (authError) {
+    if (authError || data.user?.email !== editorEmail) {
       setLoginError('That passcode didn’t work. Please try again.')
       return
     }
+    setEditor(true)
     setPasscode('')
     setLoginOpen(false)
   }
@@ -197,7 +199,7 @@ export default function App() {
             ) : (
               <button className="button button-dark" onClick={() => setLoginOpen(true)}><KeyRound size={16} /> Editor access</button>
             )}
-            <span className="version">v1.2.1</span>
+            <span className="version">v1.2.2</span>
           </div>
         </div>
 
