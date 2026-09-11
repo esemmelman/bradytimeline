@@ -54,6 +54,23 @@ export default function App() {
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
   const [noteItem, setNoteItem] = useState<Item | null>(null)
+  const [itemsWithNotes, setItemsWithNotes] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!editor) { setItemsWithNotes(new Set()); return }
+    if (noteItem) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const { data, error: notesError } = await supabase.from('brady_status_notes_v1').select('item_key,body')
+        if (notesError) throw notesError
+        if (!cancelled) setItemsWithNotes(new Set((data ?? []).filter((note) => note.body.trim().length > 0).map((note) => note.item_key)))
+      } catch {
+        if (!cancelled) setError('Note indicators could not be loaded. Please refresh and try again.')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [editor, noteItem])
 
   async function loadSheet() {
     const [itemsResult, datesResult, cellsResult] = await Promise.all([
@@ -180,7 +197,7 @@ export default function App() {
             ) : (
               <button className="button button-dark" onClick={() => setLoginOpen(true)}><KeyRound size={16} /> Editor access</button>
             )}
-            <span className="version">v1.2.0</span>
+            <span className="version">v1.2.1</span>
           </div>
         </div>
 
@@ -219,7 +236,7 @@ export default function App() {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.item_key}>
-                    <th scope="row">{editor ? <button className="item-notes-link" onClick={() => { if (editor) setNoteItem(item) }} aria-label={`Open notes for ${item.label}`}>{item.label}</button> : item.label}</th>
+                    <th scope="row">{editor ? <button className="item-notes-link" onClick={() => { if (editor) setNoteItem(item) }} aria-label={`Open notes for ${item.label}`}><span>{item.label}</span>{itemsWithNotes.has(item.item_key) && <span className="note-indicator">Note</span>}</button> : item.label}</th>
                     {dates.map((date) => {
                       const mapKey = keyFor(item.item_key, date.date_key)
                       const status = cells[mapKey]
