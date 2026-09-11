@@ -199,7 +199,7 @@ export default function App() {
             ) : (
               <button className="button button-dark" onClick={() => setLoginOpen(true)}><KeyRound size={16} /> Editor access</button>
             )}
-            <span className="version">v1.2.3</span>
+            <span className="version">v1.2.4</span>
           </div>
         </div>
 
