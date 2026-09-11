@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { Check, Eye, KeyRound, LoaderCircle, Lock, LogOut, RotateCcw, X } from 'lucide-react'
 import { editorEmail, supabase } from './supabase'
+import ItemNotes from './ItemNotes'
 
 type Status = 'red' | 'yellow' | 'green'
 type Item = { item_key: string; label: string; sort_order: number }
@@ -52,6 +53,7 @@ export default function App() {
   const [selected, setSelected] = useState<Status | null>('green')
   const [saving, setSaving] = useState<string | null>(null)
   const [saved, setSaved] = useState<string | null>(null)
+  const [noteItem, setNoteItem] = useState<Item | null>(null)
 
   async function loadSheet() {
     const [itemsResult, datesResult, cellsResult] = await Promise.all([
@@ -70,7 +72,7 @@ export default function App() {
     void (async () => {
       try {
         const { data } = await supabase.auth.getSession()
-        setEditor(Boolean(data.session))
+        setEditor(data.session?.user.email === editorEmail)
         await loadSheet()
       } catch {
         setError('The status sheet could not be loaded. Please refresh and try again.')
@@ -82,7 +84,10 @@ export default function App() {
     const channel = supabase.channel('brady-status-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'brady_status_cells_v1' }, () => void loadSheet())
       .subscribe()
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => setEditor(Boolean(session)))
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setEditor(session?.user.email === editorEmail)
+      if (session?.user.email !== editorEmail) setNoteItem(null)
+    })
     return () => { void supabase.removeChannel(channel); authListener.subscription.unsubscribe() }
   }, [])
 
@@ -154,6 +159,11 @@ export default function App() {
   async function signOut() {
     await supabase.auth.signOut()
     setEditor(false)
+    setNoteItem(null)
+  }
+
+  if (editor && noteItem) {
+    return <ItemNotes key={noteItem.item_key} item={noteItem} onClose={() => setNoteItem(null)} />
   }
 
   return (
@@ -170,7 +180,7 @@ export default function App() {
             ) : (
               <button className="button button-dark" onClick={() => setLoginOpen(true)}><KeyRound size={16} /> Editor access</button>
             )}
-            <span className="version">v1.1.0</span>
+            <span className="version">v1.2.0</span>
           </div>
         </div>
 
@@ -180,7 +190,7 @@ export default function App() {
 
         {editor && (
           <div className="editor-tools">
-            <div><strong>Editing is on</strong><small>Choose a color, then select cells.</small></div>
+            <div><strong>Editing is on</strong><small>Choose a color, then select cells. Select a prayer or reading to edit its notes.</small></div>
             <div className="palette" role="toolbar" aria-label="Cell color">
               {choices.map((choice) => (
                 <button key={choice.label} className={`palette-choice ${selected === choice.value ? 'selected' : ''}`} onClick={() => setSelected(choice.value)} title={choice.label} aria-label={choice.label}>
@@ -209,7 +219,7 @@ export default function App() {
               <tbody>
                 {items.map((item) => (
                   <tr key={item.item_key}>
-                    <th scope="row">{item.label}</th>
+                    <th scope="row">{editor ? <button className="item-notes-link" onClick={() => { if (editor) setNoteItem(item) }} aria-label={`Open notes for ${item.label}`}>{item.label}</button> : item.label}</th>
                     {dates.map((date) => {
                       const mapKey = keyFor(item.item_key, date.date_key)
                       const status = cells[mapKey]
@@ -238,7 +248,7 @@ export default function App() {
             <div className="lock-icon"><Lock size={22} /></div>
             <p className="eyebrow">Private editing</p>
             <h2 id="login-title">Enter your passcode</h2>
-            <p>Viewing is open to everyone. Your passcode unlocks the color tools.</p>
+            <p>Viewing is open to everyone. Your passcode unlocks the color tools and private item notes.</p>
             <form onSubmit={signIn}>
               <label htmlFor="passcode">Passcode</label>
               <input id="passcode" type="password" autoFocus autoComplete="current-password" value={passcode} onChange={(e) => setPasscode(e.target.value)} placeholder="••••••••" />
